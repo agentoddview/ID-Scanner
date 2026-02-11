@@ -272,6 +272,24 @@ code {
   color: #455a77;
 }
 
+.phone-camera-panel {
+  margin-top: 0.8rem;
+}
+
+.phone-camera-panel summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.phone-qr {
+  width: 190px;
+  height: 190px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.3rem;
+}
+
 .compact-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

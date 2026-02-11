@@ -10,7 +10,10 @@ Client-only PDF417 scanner and SVG generator built with React + TypeScript + Vit
 - PDF417 SVG generation from:
   - Raw payload text.
   - Washington ID / DL focused AAMVA v08 builder with many element codes.
+- Washington field help with info popovers and examples.
+- Dropdown selectors for common coded fields (with `Custom...` fallback).
 - Advanced PDF417 controls: compact mode, rows, columns, error-correction level.
+- Scanner phone quick-open QR panel for mobile camera fallback.
 - In-memory scan history (last 20 events, cleared on refresh).
 - No backend, no persistence, no telemetry.
 

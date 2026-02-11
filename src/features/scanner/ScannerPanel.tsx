@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toDataURL } from "qrcode";
 import {
   decodeFromCameraFrame,
   ScanCancelledError,
@@ -29,11 +30,19 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
   const [status, setStatus] = useState<DecodeStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [isFrameAssistDecoding, setIsFrameAssistDecoding] = useState(false);
+  const [phoneQrDataUrl, setPhoneQrDataUrl] = useState<string>("");
+  const [phoneLinkCopied, setPhoneLinkCopied] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
   const isSecure = window.isSecureContext;
   const hasCameraApi = Boolean(navigator.mediaDevices?.getUserMedia);
+  const phoneScannerLink = useMemo(() => {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set("mobile", "1");
+    nextUrl.hash = "scanner";
+    return nextUrl.toString();
+  }, []);
 
   const loadDevices = useCallback(async () => {
     try {
@@ -59,6 +68,16 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
       stopAllCameraStreams(videoElement ?? undefined);
     };
   }, [loadDevices]);
+
+  useEffect(() => {
+    void toDataURL(phoneScannerLink, {
+      width: 190,
+      margin: 1,
+      errorCorrectionLevel: "M",
+    })
+      .then((dataUrl: string) => setPhoneQrDataUrl(dataUrl))
+      .catch(() => setPhoneQrDataUrl(""));
+  }, [phoneScannerLink]);
 
   const stopScan = () => {
     sessionRef.current?.stop();
@@ -154,6 +173,16 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
     }
   }, [finalizeDecode]);
 
+  const copyPhoneLink = async () => {
+    try {
+      await navigator.clipboard.writeText(phoneScannerLink);
+      setPhoneLinkCopied(true);
+      window.setTimeout(() => setPhoneLinkCopied(false), 1300);
+    } catch {
+      setPhoneLinkCopied(false);
+    }
+  };
+
   useEffect(() => {
     if (status !== "scanning") {
       return undefined;
@@ -243,6 +272,23 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
       {!hasCameraApi ? <p className="error-text">Camera APIs are unavailable in this browser.</p> : null}
       {devices.length === 0 ? <p className="muted">No camera found. Use image upload as fallback.</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
+
+      <details className="phone-camera-panel">
+        <summary>Use Phone Camera (QR Quick Open)</summary>
+        <p className="muted">
+          Scan this QR with your phone to open the scanner on mobile quickly. Direct phone-to-desktop webcam relay is
+          not native in browsers without extra software, but this gives a fast phone camera workflow.
+        </p>
+        {phoneQrDataUrl ? <img src={phoneQrDataUrl} alt="QR code for mobile scanner link" className="phone-qr" /> : null}
+        <div className="button-row">
+          <button type="button" className="button button-secondary" onClick={() => void copyPhoneLink()}>
+            {phoneLinkCopied ? "Copied" : "Copy Phone Link"}
+          </button>
+          <a className="button button-secondary" href={phoneScannerLink} target="_blank" rel="noreferrer">
+            Open Link
+          </a>
+        </div>
+      </details>
     </section>
   );
 }

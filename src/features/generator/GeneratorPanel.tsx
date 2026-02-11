@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { buildAamva08Payload, buildAamva08PayloadFromFields } from "../../lib/aamva/buildAamva08";
 import {
   AAMVA_FIELD_DEFINITIONS,
+  AAMVA_FIELD_SELECT_OPTIONS,
   AAMVA_REQUIRED_CORE_CODES,
   AAMVA_REQUIRED_CORE_CODES_SET,
   AAMVA_WA_DEFAULTS,
@@ -15,6 +16,7 @@ type GeneratorMode = "raw" | "aamva";
 
 const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const DATE_CODES = new Set(["DBA", "DBB", "DBD", "DBE", "DBL", "PAB", "PAD", "DDC", "DDH", "DDI", "DDJ"]);
+const CUSTOM_SELECT_VALUE = "__CUSTOM__";
 
 const CORE_WA_FIELDS: AamvaFieldDefinition[] = [
   { code: "DAQ", label: "License or ID Number", washingtonLabel: "Washington license or ID number" },
@@ -81,6 +83,7 @@ export function GeneratorPanel() {
   const [issuerIIN, setIssuerIIN] = useState("636045");
   const [waFields, setWaFields] = useState<Record<string, string>>(getDefaultWaFields());
   const [customFields, setCustomFields] = useState<AamvaCustomField[]>([]);
+  const [customSelectCodes, setCustomSelectCodes] = useState<Record<string, boolean>>({});
   const [fieldFilter, setFieldFilter] = useState("");
   const [openInfoCode, setOpenInfoCode] = useState<string | null>(null);
 
@@ -225,6 +228,18 @@ export function GeneratorPanel() {
     const inputId = `wa-field-${field.code}`;
     const required = AAMVA_REQUIRED_CORE_CODES_SET.has(field.code);
     const help = AAMVA_WA_FIELD_HELP[field.code] ?? getFallbackHelp(field);
+    const selectOptions = AAMVA_FIELD_SELECT_OPTIONS[field.code];
+    const currentValue = waFields[field.code] ?? "";
+    const matchesSelectOption = Boolean(selectOptions?.some((option) => option.value === currentValue));
+    const customMode = Boolean(selectOptions && (customSelectCodes[field.code] || (currentValue && !matchesSelectOption)));
+    const selectValue = customMode ? CUSTOM_SELECT_VALUE : currentValue;
+
+    const setCustomMode = (enabled: boolean) => {
+      setCustomSelectCodes((previous) => ({
+        ...previous,
+        [field.code]: enabled,
+      }));
+    };
 
     return (
       <div className="field-block" key={field.code}>
@@ -244,14 +259,54 @@ export function GeneratorPanel() {
           </button>
         </div>
 
-        <input
-          id={inputId}
-          type={DATE_CODES.has(field.code) ? "date" : "text"}
-          required={required}
-          value={waFields[field.code] ?? ""}
-          onChange={(event) => updateWaField(field.code, event.target.value)}
-          placeholder={field.code}
-        />
+        {selectOptions ? (
+          <>
+            <select
+              id={inputId}
+              value={selectValue}
+              required={required}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                if (nextValue === CUSTOM_SELECT_VALUE) {
+                  setCustomMode(true);
+                  if (matchesSelectOption) {
+                    updateWaField(field.code, "");
+                  }
+                  return;
+                }
+
+                setCustomMode(false);
+                updateWaField(field.code, nextValue);
+              }}
+            >
+              <option value="">Select a value</option>
+              {selectOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+              <option value={CUSTOM_SELECT_VALUE}>Custom...</option>
+            </select>
+            {customMode ? (
+              <input
+                id={`${inputId}-custom`}
+                value={currentValue}
+                required={required}
+                onChange={(event) => updateWaField(field.code, event.target.value)}
+                placeholder={`Custom ${field.code} value`}
+              />
+            ) : null}
+          </>
+        ) : (
+          <input
+            id={inputId}
+            type={DATE_CODES.has(field.code) ? "date" : "text"}
+            required={required}
+            value={currentValue}
+            onChange={(event) => updateWaField(field.code, event.target.value)}
+            placeholder={field.code}
+          />
+        )}
 
         <p className="field-example">Example: {help.example}</p>
 

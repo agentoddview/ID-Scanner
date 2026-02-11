@@ -10,6 +10,11 @@ export interface AamvaFieldHelp {
   example: string;
 }
 
+export interface AamvaFieldSelectOption {
+  value: string;
+  label: string;
+}
+
 export const AAMVA_FIELD_DEFINITIONS: AamvaFieldDefinition[] = [
   { code: "DAA", label: "Full Name", washingtonLabel: "Full legal name" },
   { code: "DAB", label: "Family Name", washingtonLabel: "Family name" },
@@ -205,4 +210,82 @@ export const AAMVA_WA_FIELD_HELP: Record<string, AamvaFieldHelp> = {
     washingtonUse: "WA-specific field when court restrictions are encoded.",
     example: "CR01",
   },
+};
+
+export const AAMVA_FIELD_SELECT_OPTIONS: Record<string, AamvaFieldSelectOption[]> = {
+  DAJ: [
+    { value: "WA", label: "WA - Washington" },
+    { value: "OR", label: "OR - Oregon" },
+    { value: "ID", label: "ID - Idaho" },
+    { value: "CA", label: "CA - California" },
+  ],
+  DAO: [
+    { value: "WA", label: "WA - Washington" },
+    { value: "OR", label: "OR - Oregon" },
+    { value: "ID", label: "ID - Idaho" },
+    { value: "CA", label: "CA - California" },
+  ],
+  DBC: [
+    { value: "1", label: "1 - Male" },
+    { value: "2", label: "2 - Female" },
+    { value: "9", label: "9 - Not Specified" },
+  ],
+  DAR: [
+    { value: "D", label: "D - Standard Passenger" },
+    { value: "C", label: "C - Commercial" },
+    { value: "B", label: "B - Commercial Heavy" },
+    { value: "A", label: "A - Combination Commercial" },
+    { value: "ID", label: "ID - Identification Card" },
+  ],
+  DAS: [
+    { value: "A", label: "A - Corrective Lenses" },
+    { value: "B", label: "B - Daylight Only" },
+    { value: "C", label: "C - Mechanical Aid" },
+    { value: "D", label: "D - Prosthetic Aid" },
+    { value: "E", label: "E - Automatic Transmission Only" },
+  ],
+  DAT: [
+    { value: "H", label: "H - Hazardous Materials" },
+    { value: "N", label: "N - Tank Vehicle" },
+    { value: "P", label: "P - Passenger" },
+    { value: "S", label: "S - School Bus" },
+    { value: "T", label: "T - Doubles/Triples" },
+    { value: "X", label: "X - Tank + HazMat" },
+  ],
+  DAY: [
+    { value: "BLK", label: "Black" },
+    { value: "BLU", label: "Blue" },
+    { value: "BRO", label: "Brown" },
+    { value: "GRY", label: "Gray" },
+    { value: "GRN", label: "Green" },
+    { value: "HAZ", label: "Hazel" },
+    { value: "MAR", label: "Maroon" },
+    { value: "PNK", label: "Pink" },
+  ],
+  DAZ: [
+    { value: "BAL", label: "Bald" },
+    { value: "BLK", label: "Black" },
+    { value: "BLN", label: "Blond" },
+    { value: "BRO", label: "Brown" },
+    { value: "GRY", label: "Gray" },
+    { value: "RED", label: "Red" },
+    { value: "SDY", label: "Sandy" },
+    { value: "WHI", label: "White" },
+  ],
+  DCG: [
+    { value: "USA", label: "USA - United States" },
+    { value: "CAN", label: "CAN - Canada" },
+  ],
+  DBH: [
+    { value: "1", label: "1 - Organ Donor" },
+    { value: "0", label: "0 - Not Organ Donor" },
+  ],
+  DDK: [
+    { value: "1", label: "1 - Organ Donor Indicator True" },
+    { value: "0", label: "0 - Organ Donor Indicator False" },
+  ],
+  DDL: [
+    { value: "1", label: "1 - Veteran Indicator True" },
+    { value: "0", label: "0 - Veteran Indicator False" },
+  ],
 };
