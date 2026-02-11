@@ -45,13 +45,13 @@ export function ImageDecodePanel({ onDecoded }: ImageDecodePanelProps) {
       </header>
 
       <label className="button button-secondary file-button" htmlFor="upload-pdf417-image">
-        {isDecoding ? "Decoding..." : "Upload PNG / JPG / WEBP"}
+        {isDecoding ? "Decoding..." : "Upload PNG / JPG / WEBP / HEIC"}
       </label>
       <input
         id="upload-pdf417-image"
         className="hidden-input"
         type="file"
-        accept="image/png,image/jpeg,image/webp"
+        accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
         onChange={onFileChange}
         disabled={isDecoding}
       />

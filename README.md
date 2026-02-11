@@ -5,7 +5,7 @@ Client-only PDF417 scanner and SVG generator built with React + TypeScript + Vit
 ## Features
 
 - Live webcam PDF417 scanning with camera selection.
-- Image upload decode (`png`, `jpg`, `webp`) fallback.
+- Image upload decode (`png`, `jpg`, `webp`, `heic`, `heif`) fallback.
 - Raw decode payload + automatic AAMVA field parsing.
 - PDF417 SVG generation from:
   - Raw payload text.
