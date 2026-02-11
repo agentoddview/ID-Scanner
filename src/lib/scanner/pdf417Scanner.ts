@@ -1,6 +1,6 @@
 import { BrowserCodeReader, BrowserPDF417Reader } from "@zxing/browser";
 import type { IScannerControls } from "@zxing/browser/esm/common/IScannerControls";
-import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import type { Result } from "@zxing/library";
 import type { DecodeResult } from "../../types/barcode";
 
@@ -62,7 +62,7 @@ const createVideoConstraints = (deviceId?: string): MediaStreamConstraints => ({
 });
 
 const applyHighContrast = (canvas: HTMLCanvasElement): void => {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) {
     return;
   }
@@ -181,13 +181,9 @@ export async function startCameraDecode(
     reader
       .decodeFromConstraints(createVideoConstraints(deviceId), videoEl, (scanResult, scanError) => {
         if (!scanResult || done) {
-          if (scanError && !(scanError instanceof NotFoundException) && !done) {
-            // Ignore frame-level not-found errors but surface real scanner failures.
-            controls?.stop();
-            stopAllCameraStreams(videoEl);
-            reject(new Error(getErrorMessage(scanError)));
-            done = true;
-          }
+          // Frame-level misses/errors are expected while scanning.
+          // Startup/device/permission failures are handled by decodeFromConstraints rejection below.
+          void scanError;
           return;
         }
 
