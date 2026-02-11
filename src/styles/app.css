@@ -214,6 +214,64 @@ code {
   gap: 0.6rem;
 }
 
+.field-block {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.required-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  color: #fff;
+  background: #b91c1c;
+  vertical-align: middle;
+}
+
+.required-note {
+  margin: 0 0 0.5rem;
+}
+
+.field-info-button {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #e8eef6;
+  color: #1f3354;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.field-info-panel {
+  border: 1px solid #c8d7ea;
+  background: #f2f7ff;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+  color: #1a3157;
+}
+
+.field-info-panel p {
+  margin: 0.2rem 0;
+}
+
+.field-example {
+  margin: 0;
+  font-size: 0.73rem;
+  color: #455a77;
+}
+
 .compact-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

@@ -4,6 +4,12 @@ export interface AamvaFieldDefinition {
   washingtonLabel?: string;
 }
 
+export interface AamvaFieldHelp {
+  what: string;
+  washingtonUse: string;
+  example: string;
+}
+
 export const AAMVA_FIELD_DEFINITIONS: AamvaFieldDefinition[] = [
   { code: "DAA", label: "Full Name", washingtonLabel: "Full legal name" },
   { code: "DAB", label: "Family Name", washingtonLabel: "Family name" },
@@ -97,10 +103,106 @@ export const AAMVA_FIELD_ORDER = AAMVA_FIELD_DEFINITIONS.map((item) => item.code
   (code) => !code.includes("x"),
 );
 
-export const AAMVA_REQUIRED_CORE_CODES = ["DAQ", "DCS", "DAC", "DBB", "DBA"];
+export const AAMVA_REQUIRED_CORE_CODES = ["DAQ", "DCS", "DAC", "DBB", "DBA", "DBD", "DBC", "DAJ", "DCG"];
+
+export const AAMVA_REQUIRED_CORE_CODES_SET = new Set(AAMVA_REQUIRED_CORE_CODES);
 
 export const AAMVA_WA_DEFAULTS: Record<string, string> = {
   DAJ: "WA",
   DAO: "WA",
   DCG: "USA",
+  DBC: "9",
+};
+
+export const AAMVA_WA_FIELD_HELP: Record<string, AamvaFieldHelp> = {
+  DAQ: {
+    what: "Washington license or ID card number.",
+    washingtonUse: "Use the exact number on the front of the WA ID card.",
+    example: "WDL1234567AB",
+  },
+  DCS: {
+    what: "Primary family/last name.",
+    washingtonUse: "Matches the legal surname printed on the WA credential.",
+    example: "SMITH",
+  },
+  DAC: {
+    what: "Primary given/first name.",
+    washingtonUse: "Use legal first name as it appears on WA ID.",
+    example: "JORDAN",
+  },
+  DAD: {
+    what: "Middle name or names.",
+    washingtonUse: "Optional if no middle name appears on WA ID.",
+    example: "LEE",
+  },
+  DBA: {
+    what: "Credential expiration date.",
+    washingtonUse: "Required for WA generation. Use the card's expiration date.",
+    example: "2030-08-24",
+  },
+  DBB: {
+    what: "Date of birth.",
+    washingtonUse: "Required. Enter holder DOB exactly.",
+    example: "1999-01-15",
+  },
+  DBD: {
+    what: "Credential issue date.",
+    washingtonUse: "Required for WA generation.",
+    example: "2022-08-24",
+  },
+  DBC: {
+    what: "Sex code (1=Male, 2=Female, 9=Not specified).",
+    washingtonUse: "WA records commonly encode as 1/2/9 in barcode data.",
+    example: "1",
+  },
+  DAG: {
+    what: "Mailing address line 1.",
+    washingtonUse: "Street number and name for WA mailing address.",
+    example: "9908 WATERS AVE S",
+  },
+  DAI: {
+    what: "Mailing city.",
+    washingtonUse: "City associated with mailing address.",
+    example: "SEATTLE",
+  },
+  DAJ: {
+    what: "Mailing state/jurisdiction code.",
+    washingtonUse: "Required for WA generation and should normally be WA.",
+    example: "WA",
+  },
+  DAK: {
+    what: "Mailing postal code.",
+    washingtonUse: "WA ZIP (5 or ZIP+4 depending on source data).",
+    example: "98118",
+  },
+  DAR: {
+    what: "License class code.",
+    washingtonUse: "WA class values like D, C, A, B depending on credential.",
+    example: "D",
+  },
+  DAS: {
+    what: "Restriction codes.",
+    washingtonUse: "Use WA-specific restriction abbreviations if present.",
+    example: "B",
+  },
+  DAT: {
+    what: "Endorsement codes.",
+    washingtonUse: "Use WA-specific endorsements for CDL scenarios.",
+    example: "N",
+  },
+  DCF: {
+    what: "Document discriminator identifier.",
+    washingtonUse: "Unique discriminator tied to printed credential instance.",
+    example: "123456789ABCDEF",
+  },
+  DCG: {
+    what: "Issuing country code.",
+    washingtonUse: "Required and typically USA for Washington IDs.",
+    example: "USA",
+  },
+  ZVA: {
+    what: "State-specific court restriction code.",
+    washingtonUse: "WA-specific field when court restrictions are encoded.",
+    example: "CR01",
+  },
 };

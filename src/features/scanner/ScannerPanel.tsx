@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  decodeFromCameraFrame,
   ScanCancelledError,
   listCameraDevices,
   startCameraDecode,
@@ -23,9 +24,11 @@ const getErrorMessage = (error: unknown): string => {
 export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sessionRef = useRef<CameraDecodeSession | null>(null);
+  const frameAssistInFlightRef = useRef(false);
 
   const [status, setStatus] = useState<DecodeStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [isFrameAssistDecoding, setIsFrameAssistDecoding] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
 
@@ -62,6 +65,15 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
     sessionRef.current = null;
     setStatus("paused");
   };
+
+  const finalizeDecode = useCallback((result: DecodeResult) => {
+    sessionRef.current?.stop();
+    sessionRef.current = null;
+    setStatus("paused");
+    setError(null);
+    onDecoded(result);
+    void loadDevices();
+  }, [onDecoded, loadDevices]);
 
   const ensureCameraPermission = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -105,10 +117,7 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
         return;
       }
 
-      sessionRef.current = null;
-      setStatus("paused");
-      onDecoded(result);
-      void loadDevices();
+      finalizeDecode(result);
     } catch (scanError) {
       if (scanError instanceof ScanCancelledError) {
         setStatus("paused");
@@ -120,6 +129,44 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
       setError(getErrorMessage(scanError));
     }
   };
+
+  const decodeCurrentFrame = useCallback(async (silent = false) => {
+    if (!videoRef.current || frameAssistInFlightRef.current) {
+      return;
+    }
+
+    frameAssistInFlightRef.current = true;
+    setIsFrameAssistDecoding(true);
+    if (!silent) {
+      setError(null);
+    }
+
+    try {
+      const result = await decodeFromCameraFrame(videoRef.current);
+      finalizeDecode(result);
+    } catch (frameError) {
+      if (!silent) {
+        setError(getErrorMessage(frameError));
+      }
+    } finally {
+      frameAssistInFlightRef.current = false;
+      setIsFrameAssistDecoding(false);
+    }
+  }, [finalizeDecode]);
+
+  useEffect(() => {
+    if (status !== "scanning") {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      void decodeCurrentFrame(true);
+    }, 950);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [status, decodeCurrentFrame]);
 
   return (
     <section className="panel">
@@ -170,13 +217,26 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
         >
           Stop
         </button>
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => {
+            void decodeCurrentFrame(false);
+          }}
+          disabled={status !== "scanning" && status !== "paused"}
+        >
+          {isFrameAssistDecoding ? "Decoding Frame..." : "Decode Current Frame"}
+        </button>
       </div>
 
       <p className="muted">
         Status: <strong>{status}</strong>
       </p>
       {status === "scanning" ? (
-        <p className="muted">Hold the PDF417 steady inside the frame. The scanner auto-pauses on the first match.</p>
+        <p className="muted">
+          Hold the PDF417 steady inside the frame. If close focus is blurry, pull back slightly and use "Decode Current
+          Frame".
+        </p>
       ) : null}
 
       {!isSecure ? <p className="error-text">Camera scanning is disabled on non-secure origins.</p> : null}

@@ -50,16 +50,109 @@ const createVideoConstraints = (deviceId?: string): MediaStreamConstraints => ({
   video: deviceId
     ? {
         deviceId: { exact: deviceId },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+        width: { ideal: 2560 },
+        height: { ideal: 1440 },
         facingMode: { ideal: "environment" },
       }
     : {
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+        width: { ideal: 2560 },
+        height: { ideal: 1440 },
         facingMode: { ideal: "environment" },
       },
 });
+
+const applyHighContrast = (canvas: HTMLCanvasElement): void => {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+
+  for (let index = 0; index < pixels.length; index += 4) {
+    const gray = 0.299 * pixels[index] + 0.587 * pixels[index + 1] + 0.114 * pixels[index + 2];
+    const boosted = gray > 128 ? 255 : 0;
+    pixels[index] = boosted;
+    pixels[index + 1] = boosted;
+    pixels[index + 2] = boosted;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+};
+
+const drawVideoFrame = (
+  videoEl: HTMLVideoElement,
+  scale = 1,
+  rotation = 0,
+  highContrast = false,
+): HTMLCanvasElement => {
+  const sourceWidth = videoEl.videoWidth;
+  const sourceHeight = videoEl.videoHeight;
+  const targetWidth = Math.max(1, Math.floor(sourceWidth * scale));
+  const targetHeight = Math.max(1, Math.floor(sourceHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  const swapDimensions = rotation === 90 || rotation === 270;
+  canvas.width = swapDimensions ? targetHeight : targetWidth;
+  canvas.height = swapDimensions ? targetWidth : targetHeight;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return canvas;
+  }
+
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate((rotation * Math.PI) / 180);
+  ctx.drawImage(videoEl, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
+  ctx.restore();
+
+  if (highContrast) {
+    applyHighContrast(canvas);
+  }
+
+  return canvas;
+};
+
+const tryDecodeCanvas = (reader: BrowserPDF417Reader, canvas: HTMLCanvasElement): string | null => {
+  try {
+    const result = reader.decodeFromCanvas(canvas);
+    return result.getText();
+  } catch {
+    return null;
+  }
+};
+
+export async function decodeFromCameraFrame(videoEl: HTMLVideoElement): Promise<DecodeResult> {
+  if (!videoEl.videoWidth || !videoEl.videoHeight) {
+    throw new Error("Video frame is not ready yet.");
+  }
+
+  const reader = createPdf417Reader();
+  const attempts: Array<{ scale: number; rotation: number; highContrast: boolean }> = [
+    { scale: 1, rotation: 0, highContrast: false },
+    { scale: 1.4, rotation: 0, highContrast: false },
+    { scale: 1.9, rotation: 0, highContrast: true },
+    { scale: 1.4, rotation: 180, highContrast: false },
+    { scale: 1.9, rotation: 180, highContrast: true },
+  ];
+
+  for (const attempt of attempts) {
+    const canvas = drawVideoFrame(videoEl, attempt.scale, attempt.rotation, attempt.highContrast);
+    const text = tryDecodeCanvas(reader, canvas);
+    if (text) {
+      return {
+        rawText: text,
+        format: "PDF_417",
+        source: "camera",
+        timestampIso: new Date().toISOString(),
+      };
+    }
+  }
+
+  throw new Error("No PDF417 barcode detected in the current camera frame.");
+}
 
 export async function listCameraDevices(): Promise<MediaDeviceInfo[]> {
   const devices = await BrowserCodeReader.listVideoInputDevices();

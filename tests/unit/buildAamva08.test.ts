@@ -60,6 +60,8 @@ describe("buildAamva08Payload", () => {
         DAC: "JANE",
         DBB: "1992-06-14",
         DBA: "2030-09-01",
+        DBD: "2022-08-24",
+        DBC: "2",
         DAJ: "WA",
       },
       customFields: [{ code: "ZAB", value: "WA-SPECIAL" }],

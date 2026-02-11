@@ -6,6 +6,7 @@ describe("GeneratorPanel", () => {
   it("generates SVG from raw payload", async () => {
     const { container } = render(<GeneratorPanel />);
 
+    fireEvent.click(screen.getByRole("button", { name: /raw payload/i }));
     fireEvent.change(screen.getByLabelText(/raw payload/i), {
       target: { value: "HELLO-PDF417" },
     });

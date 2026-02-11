@@ -118,10 +118,6 @@ export function buildAamva08PayloadFromFields(input: Aamva08FieldBuildInput): st
     }
   }
 
-  if (!merged.DBD) {
-    merged.DBD = toMmddyyyy(new Date().toISOString().slice(0, 10), "Issue date");
-  }
-
   const orderedCodes = sortFieldCodes(Object.keys(merged));
   const lines = ["@", `ANSI ${issuerIIN}080102DL00410288ZA03290015DL`];
 
@@ -141,6 +137,7 @@ export function buildAamva08Payload(form: Aamva08FormInput): string {
       DAQ: requireField("Document number", form.documentNumber),
       DBB: toMmddyyyy(form.dob, "Date of birth"),
       DBA: toMmddyyyy(form.expiry, "Expiry date"),
+      DBD: toMmddyyyy(new Date().toISOString().slice(0, 10), "Issue date"),
       DBC: normalizeSex(form.sex),
       DAG: (form.address1 ?? "UNKNOWN ADDRESS").trim().toUpperCase(),
       DAI: (form.city ?? "UNKNOWN").trim().toUpperCase(),

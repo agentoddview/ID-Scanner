@@ -4,6 +4,7 @@ test.describe("generator workflows", () => {
   test("creates an SVG from raw payload", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Generator" }).click();
+    await page.getByRole("button", { name: "Raw Payload" }).click();
 
     await page.getByLabel("Raw payload").fill("PLAYWRIGHT-PDF417");
     await page.getByRole("button", { name: "Generate SVG" }).click();

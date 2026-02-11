@@ -6,6 +6,7 @@ import type { DecodeResult } from "../../src/types/barcode";
 const mocks = vi.hoisted(() => ({
   listCameraDevicesMock: vi.fn(),
   startCameraDecodeMock: vi.fn(),
+  decodeFromCameraFrameMock: vi.fn(),
   stopAllCameraStreamsMock: vi.fn(),
 }));
 
@@ -13,6 +14,7 @@ vi.mock("../../src/lib/scanner/pdf417Scanner", () => ({
   ScanCancelledError: class extends Error {},
   listCameraDevices: mocks.listCameraDevicesMock,
   startCameraDecode: mocks.startCameraDecodeMock,
+  decodeFromCameraFrame: mocks.decodeFromCameraFrameMock,
   stopAllCameraStreams: mocks.stopAllCameraStreamsMock,
 }));
 
@@ -20,6 +22,7 @@ describe("ScannerPanel", () => {
   beforeEach(() => {
     mocks.listCameraDevicesMock.mockReset();
     mocks.startCameraDecodeMock.mockReset();
+    mocks.decodeFromCameraFrameMock.mockReset();
     mocks.stopAllCameraStreamsMock.mockReset();
 
     Object.defineProperty(window, "isSecureContext", {
@@ -29,7 +32,7 @@ describe("ScannerPanel", () => {
 
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
-      value: { getUserMedia: vi.fn() },
+      value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }) },
     });
   });
 

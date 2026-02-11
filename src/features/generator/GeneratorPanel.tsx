@@ -1,32 +1,20 @@
 import { useMemo, useState } from "react";
-import {
-  buildAamva08Payload,
-  buildAamva08PayloadFromFields,
-} from "../../lib/aamva/buildAamva08";
+import { buildAamva08Payload, buildAamva08PayloadFromFields } from "../../lib/aamva/buildAamva08";
 import {
   AAMVA_FIELD_DEFINITIONS,
   AAMVA_REQUIRED_CORE_CODES,
+  AAMVA_REQUIRED_CORE_CODES_SET,
   AAMVA_WA_DEFAULTS,
+  AAMVA_WA_FIELD_HELP,
   type AamvaFieldDefinition,
 } from "../../lib/aamva/fieldCatalog";
 import { generatePdf417Svg } from "../../lib/generator/pdf417Svg";
-import type { Aamva08FormInput, AamvaCustomField } from "../../types/barcode";
+import type { AamvaCustomField } from "../../types/barcode";
 
 type GeneratorMode = "raw" | "aamva";
 
-const EMPTY_FORM: Aamva08FormInput = {
-  firstName: "",
-  lastName: "",
-  dob: "",
-  expiry: "",
-  documentNumber: "",
-  issuerIIN: "636045",
-  sex: "",
-  address1: "",
-  city: "",
-  jurisdictionCode: "WA",
-  postalCode: "",
-};
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+const DATE_CODES = new Set(["DBA", "DBB", "DBD", "DBE", "DBL", "PAB", "PAD", "DDC", "DDH", "DDI", "DDJ"]);
 
 const CORE_WA_FIELDS: AamvaFieldDefinition[] = [
   { code: "DAQ", label: "License or ID Number", washingtonLabel: "Washington license or ID number" },
@@ -59,23 +47,12 @@ const getErrorMessage = (error: unknown): string => {
   return "Barcode generation failed.";
 };
 
-const toFieldLabel = (field: AamvaFieldDefinition): string =>
-  `${field.code} - ${field.washingtonLabel ?? field.label}`;
+const toFieldLabel = (field: AamvaFieldDefinition): string => `${field.code} - ${field.washingtonLabel ?? field.label}`;
 
-const getBaseFieldsFromLegacyForm = (form: Aamva08FormInput): Record<string, string> => ({
+const getDefaultWaFields = (): Record<string, string> => ({
   ...AAMVA_WA_DEFAULTS,
-  DAC: form.firstName,
-  DCS: form.lastName,
-  DAQ: form.documentNumber,
-  DBB: form.dob,
-  DBA: form.expiry,
-  DBC: form.sex ?? "",
-  DAG: form.address1 ?? "",
-  DAI: form.city ?? "",
-  DAJ: form.jurisdictionCode ?? "WA",
-  DAK: form.postalCode ?? "",
-  DCF: form.documentNumber,
-  DCG: "USA",
+  DBD: TODAY_ISO,
+  DBC: "9",
 });
 
 const parseOptionalNumber = (value: string): number | undefined => {
@@ -92,13 +69,20 @@ const parseOptionalNumber = (value: string): number | undefined => {
   return parsed;
 };
 
+const getFallbackHelp = (field: AamvaFieldDefinition) => ({
+  what: field.label,
+  washingtonUse: `Washington usage: ${field.washingtonLabel ?? field.label}.`,
+  example: `Example: ${field.code}VALUE`,
+});
+
 export function GeneratorPanel() {
-  const [mode, setMode] = useState<GeneratorMode>("raw");
+  const [mode, setMode] = useState<GeneratorMode>("aamva");
   const [rawPayload, setRawPayload] = useState("");
-  const [form, setForm] = useState<Aamva08FormInput>(EMPTY_FORM);
-  const [waFields, setWaFields] = useState<Record<string, string>>(getBaseFieldsFromLegacyForm(EMPTY_FORM));
+  const [issuerIIN, setIssuerIIN] = useState("636045");
+  const [waFields, setWaFields] = useState<Record<string, string>>(getDefaultWaFields());
   const [customFields, setCustomFields] = useState<AamvaCustomField[]>([]);
   const [fieldFilter, setFieldFilter] = useState("");
+  const [openInfoCode, setOpenInfoCode] = useState<string | null>(null);
 
   const [scale, setScale] = useState(3);
   const [height, setHeight] = useState(9);
@@ -115,6 +99,7 @@ export function GeneratorPanel() {
   const filteredAdvancedFields = useMemo(() => {
     const filter = fieldFilter.trim().toUpperCase();
     const source = AAMVA_FIELD_DEFINITIONS.filter((field) => !CORE_CODES.has(field.code));
+
     if (!filter) {
       return source;
     }
@@ -132,38 +117,34 @@ export function GeneratorPanel() {
 
     try {
       return buildAamva08PayloadFromFields({
-        issuerIIN: form.issuerIIN,
+        issuerIIN,
         fields: waFields,
         customFields,
       });
     } catch {
       return "";
     }
-  }, [mode, rawPayload, form.issuerIIN, waFields, customFields]);
+  }, [mode, rawPayload, issuerIIN, waFields, customFields]);
 
   const legacyPreview = useMemo(() => {
     try {
-      return buildAamva08Payload(form);
+      return buildAamva08Payload({
+        firstName: waFields.DAC ?? "",
+        lastName: waFields.DCS ?? "",
+        dob: waFields.DBB ?? "",
+        expiry: waFields.DBA ?? "",
+        documentNumber: waFields.DAQ ?? "",
+        issuerIIN,
+        sex: waFields.DBC ?? "",
+        address1: waFields.DAG ?? "",
+        city: waFields.DAI ?? "",
+        jurisdictionCode: waFields.DAJ ?? "WA",
+        postalCode: waFields.DAK ?? "",
+      });
     } catch {
-      return "Complete core fields to render legacy preview.";
+      return "Complete required Washington fields to render legacy preview.";
     }
-  }, [form]);
-
-  const updateLegacyForm = (key: keyof Aamva08FormInput, value: string) => {
-    setForm((previous) => {
-      const next = {
-        ...previous,
-        [key]: value,
-      };
-
-      setWaFields((current) => ({
-        ...current,
-        ...getBaseFieldsFromLegacyForm(next),
-      }));
-
-      return next;
-    });
-  };
+  }, [issuerIIN, waFields]);
 
   const updateWaField = (code: string, value: string) => {
     setWaFields((previous) => ({
@@ -201,7 +182,7 @@ export function GeneratorPanel() {
         mode === "raw"
           ? rawPayload.trim()
           : buildAamva08PayloadFromFields({
-              issuerIIN: form.issuerIIN,
+              issuerIIN,
               fields: waFields,
               customFields,
             });
@@ -238,6 +219,50 @@ export function GeneratorPanel() {
     anchor.download = "pdf417-barcode.svg";
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const renderFieldInput = (field: AamvaFieldDefinition) => {
+    const inputId = `wa-field-${field.code}`;
+    const required = AAMVA_REQUIRED_CORE_CODES_SET.has(field.code);
+    const help = AAMVA_WA_FIELD_HELP[field.code] ?? getFallbackHelp(field);
+
+    return (
+      <div className="field-block" key={field.code}>
+        <div className="field-title-row">
+          <label htmlFor={inputId} className="field-label">
+            {toFieldLabel(field)}
+            {required ? <span className="required-badge">Required</span> : null}
+          </label>
+          <button
+            type="button"
+            className="field-info-button"
+            aria-label={`Info for ${field.code}`}
+            aria-expanded={openInfoCode === field.code}
+            onClick={() => setOpenInfoCode((previous) => (previous === field.code ? null : field.code))}
+          >
+            i
+          </button>
+        </div>
+
+        <input
+          id={inputId}
+          type={DATE_CODES.has(field.code) ? "date" : "text"}
+          required={required}
+          value={waFields[field.code] ?? ""}
+          onChange={(event) => updateWaField(field.code, event.target.value)}
+          placeholder={field.code}
+        />
+
+        <p className="field-example">Example: {help.example}</p>
+
+        {openInfoCode === field.code ? (
+          <div className="field-info-panel">
+            <p>{help.what}</p>
+            <p>{help.washingtonUse}</p>
+          </div>
+        ) : null}
+      </div>
+    );
   };
 
   return (
@@ -279,85 +304,35 @@ export function GeneratorPanel() {
       ) : (
         <>
           <div className="form-grid">
-            <label>
-              Issuer IIN (Washington commonly 636045)
+            <div className="field-block">
+              <label className="field-label" htmlFor="issuer-iin-input">
+                Issuer IIN (Washington commonly 636045)
+              </label>
               <input
-                value={form.issuerIIN}
-                onChange={(event) => updateLegacyForm("issuerIIN", event.target.value)}
+                id="issuer-iin-input"
+                value={issuerIIN}
+                onChange={(event) => setIssuerIIN(event.target.value)}
                 placeholder="636045"
               />
-            </label>
+            </div>
           </div>
 
           <h3 className="subheading">Washington Core Fields</h3>
-          <div className="form-grid">
-            {CORE_WA_FIELDS.map((field) => (
-              <label key={field.code}>
-                {toFieldLabel(field)}
-                <input
-                  type={["DBA", "DBB", "DBD"].includes(field.code) ? "date" : "text"}
-                  value={waFields[field.code] ?? ""}
-                  onChange={(event) => {
-                    updateWaField(field.code, event.target.value);
-
-                    if (field.code === "DAC") {
-                      updateLegacyForm("firstName", event.target.value);
-                    }
-                    if (field.code === "DCS") {
-                      updateLegacyForm("lastName", event.target.value);
-                    }
-                    if (field.code === "DAQ") {
-                      updateLegacyForm("documentNumber", event.target.value);
-                    }
-                    if (field.code === "DBB") {
-                      updateLegacyForm("dob", event.target.value);
-                    }
-                    if (field.code === "DBA") {
-                      updateLegacyForm("expiry", event.target.value);
-                    }
-                    if (field.code === "DBC") {
-                      updateLegacyForm("sex", event.target.value);
-                    }
-                    if (field.code === "DAG") {
-                      updateLegacyForm("address1", event.target.value);
-                    }
-                    if (field.code === "DAI") {
-                      updateLegacyForm("city", event.target.value);
-                    }
-                    if (field.code === "DAJ") {
-                      updateLegacyForm("jurisdictionCode", event.target.value);
-                    }
-                    if (field.code === "DAK") {
-                      updateLegacyForm("postalCode", event.target.value);
-                    }
-                  }}
-                  placeholder={field.code}
-                />
-              </label>
-            ))}
-          </div>
+          <p className="muted required-note">
+            Required to generate a valid WA ID payload: {AAMVA_REQUIRED_CORE_CODES.join(", ")}
+          </p>
+          <div className="form-grid">{CORE_WA_FIELDS.map((field) => renderFieldInput(field))}</div>
 
           <details className="advanced-fields">
             <summary>Additional AAMVA / Washington Element Codes</summary>
-            <p className="muted">Include as many element codes as needed. Required core: {AAMVA_REQUIRED_CORE_CODES.join(", ")}</p>
+            <p className="muted">These are optional unless your workflow needs them.</p>
             <input
               value={fieldFilter}
               onChange={(event) => setFieldFilter(event.target.value)}
               placeholder="Filter by code or meaning"
               aria-label="Filter additional AAMVA fields"
             />
-            <div className="form-grid">
-              {filteredAdvancedFields.map((field) => (
-                <label key={field.code}>
-                  {toFieldLabel(field)}
-                  <input
-                    value={waFields[field.code] ?? ""}
-                    onChange={(event) => updateWaField(field.code, event.target.value)}
-                    placeholder={field.code}
-                  />
-                </label>
-              ))}
-            </div>
+            <div className="form-grid">{filteredAdvancedFields.map((field) => renderFieldInput(field))}</div>
           </details>
 
           <details className="advanced-fields">
