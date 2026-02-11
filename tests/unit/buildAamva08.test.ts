@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAamva08Payload } from "../../src/lib/aamva/buildAamva08";
+import { buildAamva08Payload, buildAamva08PayloadFromFields } from "../../src/lib/aamva/buildAamva08";
 
 describe("buildAamva08Payload", () => {
   it("builds a v08 payload with required fields", () => {
@@ -49,5 +49,26 @@ describe("buildAamva08Payload", () => {
         issuerIIN: "ABC123",
       }),
     ).toThrow("Issuer IIN must be exactly 6 digits");
+  });
+
+  it("builds payload from explicit AAMVA element codes", () => {
+    const payload = buildAamva08PayloadFromFields({
+      issuerIIN: "636045",
+      fields: {
+        DAQ: "WDL12345",
+        DCS: "DOE",
+        DAC: "JANE",
+        DBB: "1992-06-14",
+        DBA: "2030-09-01",
+        DAJ: "WA",
+      },
+      customFields: [{ code: "ZAB", value: "WA-SPECIAL" }],
+    });
+
+    expect(payload).toContain("ANSI 636045080102DL");
+    expect(payload).toContain("DAJWA");
+    expect(payload).toContain("DBB06141992");
+    expect(payload).toContain("DBA09012030");
+    expect(payload).toContain("ZABWA-SPECIAL");
   });
 });

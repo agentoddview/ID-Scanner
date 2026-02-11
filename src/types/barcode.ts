@@ -29,6 +29,10 @@ export interface Pdf417GenerateInput {
   height: number;
   includetext: false;
   padding: number;
+  compact?: boolean;
+  columns?: number;
+  rows?: number;
+  errorCorrectionLevel?: number;
 }
 
 export interface Aamva08FormInput {
@@ -43,4 +47,15 @@ export interface Aamva08FormInput {
   city?: string;
   jurisdictionCode?: string;
   postalCode?: string;
+}
+
+export interface AamvaCustomField {
+  code: string;
+  value: string;
+}
+
+export interface Aamva08FieldBuildInput {
+  issuerIIN: string;
+  fields: Record<string, string>;
+  customFields?: AamvaCustomField[];
 }

@@ -63,6 +63,14 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
     setStatus("paused");
   };
 
+  const ensureCameraPermission = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: true,
+    });
+    stream?.getTracks?.().forEach((track) => track.stop());
+  };
+
   const startScan = async () => {
     if (!videoRef.current) {
       return;
@@ -84,6 +92,9 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
     setStatus("requesting-permission");
 
     try {
+      await ensureCameraPermission();
+      await loadDevices();
+
       const session = await startCameraDecode(videoRef.current, selectedDeviceId || undefined);
       sessionRef.current = session;
       setStatus("scanning");
@@ -147,7 +158,7 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
           type="button"
           className="button"
           onClick={startScan}
-          disabled={status === "scanning" || devices.length === 0 || !isSecure || !hasCameraApi}
+          disabled={status === "scanning" || !isSecure || !hasCameraApi}
         >
           {status === "scanning" ? "Scanning..." : "Start / Resume Scan"}
         </button>
@@ -164,6 +175,9 @@ export function ScannerPanel({ onDecoded }: ScannerPanelProps) {
       <p className="muted">
         Status: <strong>{status}</strong>
       </p>
+      {status === "scanning" ? (
+        <p className="muted">Hold the PDF417 steady inside the frame. The scanner auto-pauses on the first match.</p>
+      ) : null}
 
       {!isSecure ? <p className="error-text">Camera scanning is disabled on non-secure origins.</p> : null}
       {!hasCameraApi ? <p className="error-text">Camera APIs are unavailable in this browser.</p> : null}

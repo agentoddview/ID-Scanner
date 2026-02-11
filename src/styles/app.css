@@ -203,6 +203,11 @@ code {
   margin-bottom: 0.75rem;
 }
 
+.subheading {
+  margin: 1rem 0 0.55rem;
+  font-size: 0.95rem;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -211,6 +216,35 @@ code {
 
 .compact-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.advanced-fields {
+  margin-top: 0.9rem;
+}
+
+.advanced-fields summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.custom-field-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+  margin-top: 0.5rem;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.checkbox-row input {
+  width: auto;
+  margin-top: 0;
 }
 
 .result-meta {
@@ -314,6 +348,10 @@ code {
   .form-grid,
   .compact-grid,
   .parsed-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-field-row {
     grid-template-columns: 1fr;
   }
 }

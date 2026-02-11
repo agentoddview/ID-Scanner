@@ -1,5 +1,6 @@
 import { BrowserCodeReader, BrowserPDF417Reader } from "@zxing/browser";
 import type { IScannerControls } from "@zxing/browser/esm/common/IScannerControls";
+import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library";
 import type { Result } from "@zxing/library";
 import type { DecodeResult } from "../../types/barcode";
 
@@ -30,6 +31,36 @@ const getErrorMessage = (error: unknown): string => {
   return "Unknown scanning error";
 };
 
+const createPdf417Hints = (): Map<DecodeHintType, unknown> => {
+  const hints = new Map<DecodeHintType, unknown>();
+  hints.set(DecodeHintType.TRY_HARDER, true);
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.PDF_417]);
+  return hints;
+};
+
+const createPdf417Reader = (): BrowserPDF417Reader =>
+  new BrowserPDF417Reader(createPdf417Hints(), {
+    delayBetweenScanAttempts: 35,
+    delayBetweenScanSuccess: 120,
+    tryPlayVideoTimeout: 6000,
+  });
+
+const createVideoConstraints = (deviceId?: string): MediaStreamConstraints => ({
+  audio: false,
+  video: deviceId
+    ? {
+        deviceId: { exact: deviceId },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: { ideal: "environment" },
+      }
+    : {
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: { ideal: "environment" },
+      },
+});
+
 export async function listCameraDevices(): Promise<MediaDeviceInfo[]> {
   const devices = await BrowserCodeReader.listVideoInputDevices();
   return devices.filter((device) => device.kind === "videoinput");
@@ -46,7 +77,7 @@ export async function startCameraDecode(
   videoEl: HTMLVideoElement,
   deviceId?: string,
 ): Promise<CameraDecodeSession> {
-  const reader = new BrowserPDF417Reader();
+  const reader = createPdf417Reader();
   let controls: IScannerControls | undefined;
   let done = false;
   let rejectResult: ((reason?: unknown) => void) | null = null;
@@ -55,8 +86,15 @@ export async function startCameraDecode(
     rejectResult = reject;
 
     reader
-      .decodeFromVideoDevice(deviceId, videoEl, (scanResult) => {
+      .decodeFromConstraints(createVideoConstraints(deviceId), videoEl, (scanResult, scanError) => {
         if (!scanResult || done) {
+          if (scanError && !(scanError instanceof NotFoundException) && !done) {
+            // Ignore frame-level not-found errors but surface real scanner failures.
+            controls?.stop();
+            stopAllCameraStreams(videoEl);
+            reject(new Error(getErrorMessage(scanError)));
+            done = true;
+          }
           return;
         }
 

@@ -82,7 +82,7 @@ describe("ScannerPanel", () => {
       expect(screen.getByText(/no camera found/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: /start \/ resume scan/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /start \/ resume scan/i })).toBeEnabled();
   });
 
   it("shows decode errors from camera startup", async () => {

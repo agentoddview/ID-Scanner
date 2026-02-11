@@ -14,14 +14,14 @@ test.describe("generator workflows", () => {
   test("creates an SVG from AAMVA form", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Generator" }).click();
-    await page.getByRole("button", { name: "AAMVA v08 Form" }).click();
+    await page.getByRole("button", { name: "Washington ID / DL (AAMVA v08)" }).click();
 
-    await page.getByLabel("First name").fill("Jane");
-    await page.getByLabel("Last name").fill("Doe");
-    await page.getByLabel("Date of birth").fill("1992-06-14");
-    await page.getByLabel("Expiry date").fill("2030-09-01");
-    await page.getByLabel("Document number").fill("X1234");
-    await page.getByLabel("Issuer IIN (6 digits)").fill("636026");
+    await page.getByLabel(/DAC - Given name/i).fill("Jane");
+    await page.getByLabel(/DCS - Family name/i).fill("Doe");
+    await page.getByLabel(/DBB - Date of Birth/i).fill("1992-06-14");
+    await page.getByLabel(/DBA - License Expiration Date/i).fill("2030-09-01");
+    await page.getByLabel(/DAQ - Washington license or ID number/i).fill("X1234");
+    await page.getByLabel(/Issuer IIN/i).fill("636026");
 
     await page.getByRole("button", { name: "Generate SVG" }).click();
 

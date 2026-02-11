@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  decodeFromVideoDeviceMock: vi.fn(),
+  decodeFromConstraintsMock: vi.fn(),
   listVideoInputDevicesMock: vi.fn(),
   releaseAllStreamsMock: vi.fn(),
   cleanVideoSourceMock: vi.fn(),
@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@zxing/browser", () => ({
   BrowserPDF417Reader: class {
-    decodeFromVideoDevice = mocks.decodeFromVideoDeviceMock;
+    decodeFromConstraints = mocks.decodeFromConstraintsMock;
   },
   BrowserCodeReader: {
     listVideoInputDevices: mocks.listVideoInputDevicesMock,
@@ -28,14 +28,14 @@ import {
 
 describe("pdf417Scanner adapters", () => {
   beforeEach(() => {
-    mocks.decodeFromVideoDeviceMock.mockReset();
+    mocks.decodeFromConstraintsMock.mockReset();
     mocks.listVideoInputDevicesMock.mockReset();
     mocks.releaseAllStreamsMock.mockReset();
     mocks.cleanVideoSourceMock.mockReset();
   });
 
   it("decodes from camera and maps the result", async () => {
-    mocks.decodeFromVideoDeviceMock.mockImplementation(async (_deviceId, _video, callback) => {
+    mocks.decodeFromConstraintsMock.mockImplementation(async (_constraints, _video, callback) => {
       const controls = { stop: vi.fn() };
       setTimeout(() => {
         callback({ getText: () => "PDF417-OK" });
@@ -52,7 +52,7 @@ describe("pdf417Scanner adapters", () => {
   });
 
   it("can stop a running scan session", async () => {
-    mocks.decodeFromVideoDeviceMock.mockResolvedValue({ stop: vi.fn() });
+    mocks.decodeFromConstraintsMock.mockResolvedValue({ stop: vi.fn() });
 
     const video = document.createElement("video");
     const session = await startCameraDecode(video, "camera-1");
