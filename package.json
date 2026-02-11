@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:gh": "tsc -b && vite build --base=/ID-Scanner/",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",

@@ -43,6 +43,20 @@ npm run build
 
 Recommended: Netlify, Vercel, GitHub Pages.
 
+### GitHub Pages (repo site)
+
+This project includes `.github/workflows/deploy-pages.yml` for automatic GitHub Pages deploys.
+
+1. Push this repo to GitHub with default branch `main`.
+2. In GitHub: `Settings -> Pages -> Build and deployment`, set `Source` to `GitHub Actions`.
+3. Push to `main` (or run the workflow manually). The site publishes to:
+   - `https://<username>.github.io/ID-Scanner/`
+
+If your repository name is not `ID-Scanner`, update:
+
+- `VITE_BASE_PATH` in `.github/workflows/deploy-pages.yml`
+- `build:gh` in `package.json`
+
 ## Notes
 
 - Camera scanning requires a secure context (`https://` or `localhost`).
